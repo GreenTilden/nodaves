@@ -57,7 +57,7 @@ function strengthLabel(s: string) {
 
 <style scoped>
 .bar-page {
-  max-width: 700px;
+  width: 700px;
   margin: 0 auto;
   padding: 2rem 1rem;
   font-family: 'Press Start 2P', 'Courier New', monospace;

@@ -4,9 +4,10 @@ Find your fandom's bar in any city. Curator-driven sports bar database with AI-a
 
 ## Agent Identity
 - **Name**: TBD (brand flexible)
-- **Division**: consolidation (Dewey vehicle)
+- **Division**: DTAPE / DWAVE — 100% validation sprint ownership
 - **Reports To**: Darren Arney
 - **Responsibilities**: Sports bar fandom database, city guide generation, content pipeline, darn3 visualizations
+- **UI**: Desktop only. No mobile responsiveness. No blurbs.
 
 ## Architecture
 

@@ -27,7 +27,6 @@ onMounted(async () => {
 
     <div v-if="city" class="city-header">
       <h1>{{ city.city }}, {{ city.state }}</h1>
-      <p v-if="city.generated_blurb" class="blurb">{{ city.generated_blurb }}</p>
       <div v-if="city.top_fandoms.length" class="top-fandoms">
         <span v-for="f in city.top_fandoms" :key="f" class="fandom-tag">{{ f }}</span>
       </div>
@@ -53,7 +52,7 @@ onMounted(async () => {
 
 <style scoped>
 .city-page {
-  max-width: 900px;
+  width: 900px;
   margin: 0 auto;
   padding: 2rem 1rem;
   font-family: 'Press Start 2P', 'Courier New', monospace;
@@ -65,7 +64,6 @@ onMounted(async () => {
 }
 .city-header { margin: 1.5rem 0; }
 h1 { font-size: 1.1rem; }
-.blurb { color: #aaa; font-size: 0.65rem; margin-top: 0.5rem; line-height: 1.6; }
 .top-fandoms { display: flex; gap: 0.5rem; margin-top: 0.75rem; flex-wrap: wrap; }
 .fandom-tag {
   background: #222;

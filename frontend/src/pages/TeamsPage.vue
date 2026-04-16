@@ -31,7 +31,7 @@ onMounted(() => fetchTeams())
 
 <style scoped>
 .teams-page {
-  max-width: 900px;
+  width: 900px;
   margin: 0 auto;
   padding: 2rem 1rem;
   font-family: 'Press Start 2P', 'Courier New', monospace;
