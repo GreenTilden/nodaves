@@ -29,7 +29,7 @@ const barryQuips = [
 const { targetRef: forceRef } = useDarn3(
   () => graphData.value,
   (el, data) => renderForceGraph(el, data, {
-    width: 860, height: 400, charge: -150,
+    width: 860, height: 500, charge: -250,
     onNodeClick: (node: any) => {
       if (node.group === 'team') selectedTeam.value = node.label
     },
@@ -77,15 +77,26 @@ async function fetchGraph() {
     const res = await apiFetch<any>('/bars/graph')
     graphData.value = {
       nodes: res.nodes.map((n: any) => ({
-        id: n.id, label: n.label, group: n.group,
-        size: n.size, colors: n.colors,
+        id: n.id,
+        label: n.group === 'bar' ? `${n.label} (${n.meta})` : n.label,
+        group: n.group,
+        size: n.group === 'team' ? 30 : 10,
       })),
       links: res.links.map((l: any) => ({
         source: l.source, target: l.target,
         value: l.weight, label: l.label,
       })),
     }
-    chordData.value = res.chord
+    // Filter chord to only teams with connections
+    const raw = res.chord
+    const sums = raw.matrix.map((row: number[]) => row.reduce((a: number, b: number) => a + b, 0))
+    const keep = sums.map((s: number, i: number) => s > 0 ? i : -1).filter((i: number) => i >= 0)
+    if (keep.length > 1) {
+      chordData.value = {
+        labels: keep.map((i: number) => raw.labels[i]),
+        matrix: keep.map((i: number) => keep.map((j: number) => raw.matrix[i][j])),
+      }
+    }
   } catch {
     // graph is non-critical
   }
@@ -256,13 +267,13 @@ h2 {
 .viz-container {
   background: #0d0d14;
   border: 1px solid #333;
-  min-height: 400px;
+  min-height: 500px;
   overflow: hidden;
 }
 
 .chord-container {
-  display: flex;
-  justify-content: center;
-  min-height: 500px;
+  width: 500px;
+  height: 500px;
+  margin: 0 auto;
 }
 </style>
