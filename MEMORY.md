@@ -1,11 +1,11 @@
 # No Daves — Memory
 
 ## Session Status
-- **Status**: GREEN — initial scaffold complete
-- **Focus**: Project bootstrapped with FastAPI backend + Vue 3 frontend + darn3 lib + Barry sprite
-- **Blockers**: None — greenfield
-- **Next Steps**: Seed data verification, autoresearch adapter, Casey-Jr registration, first content pipeline test
-- **Last Updated**: 2026-04-15
+- **Status**: GREEN — v0.1 live at nodaves.com
+- **Focus**: Full interactive site shipped — team picker, geolocation nearby, force graph, chord diagram, Dave Score
+- **Blockers**: Cloudflare SSL is tunnel-based (self-signed origin), no real Let's Encrypt cert yet
+- **Next Steps**: More bars (expand beyond Midwest), autoresearch fandom classifier against Ollama, Barry one-liner takes per bar, per-city SEO pages, darnometer logo integration, Dave Score refinement
+- **Last Updated**: 2026-04-16
 
 ## Project Identity
 - **Name**: No Daves (nodaves.com)
