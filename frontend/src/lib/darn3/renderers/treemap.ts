@@ -171,7 +171,7 @@ export function renderTreemap(
       .attr('stroke-width', 0.5)
       .attr('rx', 2)
       .style('cursor', 'pointer')
-      .on('mouseover', function (event: any, d: any) {
+      .on('mouseover', function (this: SVGRectElement, event: any, d: any) {
         d3.select(this).attr('fill-opacity', 1)
         const meta = d.data.metadata || {}
         let html = `<strong>${d.data.name}</strong>`
@@ -183,7 +183,7 @@ export function renderTreemap(
         config?.onNodeHover?.(d)
       })
       .on('mousemove', (event: any) => moveTooltip(tooltip, event))
-      .on('mouseout', function () {
+      .on('mouseout', function (this: SVGRectElement) {
         d3.select(this).attr('fill-opacity', 0.7)
         hideTooltip(tooltip)
         config?.onNodeHover?.(null)
