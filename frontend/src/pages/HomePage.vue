@@ -1,12 +1,109 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref, computed, watch } from 'vue'
 import { useBars } from '@/composables/useBars'
+import { useGeolocation } from '@/composables/useGeolocation'
+import { apiFetch } from '@/composables/useApi'
+import { useDarn3, renderForceGraph, renderChordDiagram } from '@/lib/darn3'
+import type { NetworkNode, NetworkLink, ChordData } from '@/lib/darn3'
+import TeamPicker from '@/components/TeamPicker.vue'
+import BarCard from '@/components/BarCard.vue'
 
-const { bars, teams, cities, loading, fetchBars, fetchTeams, fetchCities } = useBars()
+const { teams, fetchTeams } = useBars()
+const { lat, lng, loading: geoLoading, granted, requestLocation } = useGeolocation()
+
+const selectedTeam = ref<string | null>(null)
+const nearbyBars = ref<any[]>([])
+const nearbyLoading = ref(false)
+const graphData = ref<{ nodes: NetworkNode[]; links: NetworkLink[] } | null>(null)
+const chordData = ref<ChordData | null>(null)
+const barryQuip = ref('')
+
+const barryQuips = [
+  "Barry's scouting the area...",
+  "Checking for Daves...",
+  "Running interference...",
+  "Coast looks clear...",
+]
+
+// Force graph
+const { targetRef: forceRef } = useDarn3(
+  () => graphData.value,
+  (el, data) => renderForceGraph(el, data, {
+    width: 860, height: 400, charge: -150,
+    onNodeClick: (node: any) => {
+      if (node.group === 'team') selectedTeam.value = node.label
+    },
+  })
+)
+
+// Chord diagram
+const { targetRef: chordRef } = useDarn3(
+  () => chordData.value,
+  (el, data) => renderChordDiagram(el, data, { width: 500, height: 500 })
+)
+
+async function fetchNearby() {
+  if (!lat.value || !lng.value) return
+  nearbyLoading.value = true
+  barryQuip.value = barryQuips[Math.floor(Math.random() * barryQuips.length)]
+  try {
+    const params = new URLSearchParams({
+      lat: String(lat.value),
+      lng: String(lng.value),
+      radius: '100',
+    })
+    if (selectedTeam.value) params.set('team', selectedTeam.value)
+    const res = await apiFetch<any>(`/bars/nearby?${params}`)
+    nearbyBars.value = res.bars
+    if (res.bars.length === 0) {
+      barryQuip.value = selectedTeam.value
+        ? `No ${selectedTeam.value} bars nearby. Dave wins this round.`
+        : 'No bars in range. Dave has won this city.'
+    } else {
+      const low = res.bars.filter((b: any) => b.dave_score <= 25).length
+      barryQuip.value = selectedTeam.value
+        ? `${res.count} ${selectedTeam.value} bars found. ${low} are Dave-free.`
+        : `${res.count} bars nearby. ${low} are Dave-free zones.`
+    }
+  } catch {
+    barryQuip.value = "Barry's signal is down. Try again."
+  } finally {
+    nearbyLoading.value = false
+  }
+}
+
+async function fetchGraph() {
+  try {
+    const res = await apiFetch<any>('/bars/graph')
+    graphData.value = {
+      nodes: res.nodes.map((n: any) => ({
+        id: n.id, label: n.label, group: n.group,
+        size: n.size, colors: n.colors,
+      })),
+      links: res.links.map((l: any) => ({
+        source: l.source, target: l.target,
+        value: l.weight, label: l.label,
+      })),
+    }
+    chordData.value = res.chord
+  } catch {
+    // graph is non-critical
+  }
+}
+
+watch(selectedTeam, () => {
+  if (granted.value) fetchNearby()
+})
 
 onMounted(async () => {
-  await Promise.allSettled([fetchBars(), fetchTeams(), fetchCities()])
+  await fetchTeams()
+  fetchGraph()
 })
+
+async function handleLocate() {
+  const ok = await requestLocation()
+  if (ok) fetchNearby()
+}
 </script>
 
 <template>
@@ -14,70 +111,48 @@ onMounted(async () => {
     <header class="hero">
       <img src="@/assets/sprites/barry-64.png" alt="Barry" class="barry-sprite" />
       <h1>No Daves</h1>
-      <p class="tagline">Dave's not here. Your team is.</p>
+      <p class="tagline">Find your home bar advantage where Dave's not there</p>
     </header>
 
-    <section v-if="loading" class="loading">Loading...</section>
+    <!-- Team Picker -->
+    <TeamPicker
+      v-if="teams.length"
+      :teams="teams"
+      :selected="selectedTeam"
+      @select="selectedTeam = $event"
+    />
 
-    <section v-else class="content">
-      <div class="stats-row">
-        <div class="stat-card">
-          <span class="stat-num">{{ bars.length }}</span>
-          <span class="stat-label">Bars Scouted</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-num">{{ teams.length }}</span>
-          <span class="stat-label">Teams Tracked</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-num">{{ cities.length }}</span>
-          <span class="stat-label">City Guides</span>
-        </div>
+    <!-- Location -->
+    <section class="locate-section">
+      <button v-if="!granted" class="locate-btn" :disabled="geoLoading" @click="handleLocate">
+        {{ geoLoading ? 'Locating...' : 'Find Bars Near Me' }}
+      </button>
+      <p v-if="barryQuip" class="barry-says">
+        <img src="@/assets/sprites/barry-64.png" alt="" class="barry-mini" />
+        {{ barryQuip }}
+      </p>
+    </section>
+
+    <!-- Nearby Results -->
+    <section v-if="nearbyBars.length" class="results">
+      <h2>{{ selectedTeam ? `${selectedTeam} Bars` : 'Bars Near You' }}</h2>
+      <div class="bar-grid">
+        <BarCard v-for="bar in nearbyBars" :key="bar.id" :bar="bar" />
       </div>
+    </section>
 
-      <section v-if="cities.length" class="city-list">
-        <h2>City Guides</h2>
-        <div class="city-grid">
-          <router-link
-            v-for="city in cities"
-            :key="city.id"
-            :to="`/city/${city.slug}`"
-            class="city-card"
-          >
-            <strong>{{ city.city }}, {{ city.state }}</strong>
-            <span>{{ city.bar_count }} bars</span>
-          </router-link>
-        </div>
-      </section>
+    <!-- Force Graph -->
+    <section class="viz-section">
+      <h2>Fandom Network</h2>
+      <p class="viz-hint">Click a team to filter. Drag to explore.</p>
+      <div ref="forceRef" class="viz-container"></div>
+    </section>
 
-      <section v-if="bars.length" class="bar-list">
-        <h2>Recent Bars</h2>
-        <div class="bar-grid">
-          <router-link
-            v-for="bar in bars.slice(0, 12)"
-            :key="bar.id"
-            :to="`/bar/${bar.id}`"
-            class="bar-card"
-          >
-            <strong>{{ bar.name }}</strong>
-            <span class="bar-meta">{{ bar.city }}, {{ bar.state }}</span>
-            <span v-if="bar.vibe" class="vibe-tag">{{ bar.vibe }}</span>
-          </router-link>
-        </div>
-      </section>
-
-      <section v-if="teams.length" class="team-list">
-        <h2>Teams</h2>
-        <div class="team-grid">
-          <div v-for="team in teams" :key="team.id" class="team-chip">
-            <span
-              class="color-dot"
-              :style="{ background: team.colors[0] || '#666' }"
-            ></span>
-            {{ team.name }}
-          </div>
-        </div>
-      </section>
+    <!-- Chord Diagram -->
+    <section v-if="chordData" class="viz-section">
+      <h2>Rivalry Overlap</h2>
+      <p class="viz-hint">Teams sharing the same cities. Thicker ribbons = more overlap.</p>
+      <div ref="chordRef" class="viz-container chord-container"></div>
     </section>
   </div>
 </template>
@@ -92,7 +167,7 @@ onMounted(async () => {
 
 .hero {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .barry-sprite {
@@ -103,109 +178,91 @@ onMounted(async () => {
 
 .tagline {
   color: #888;
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   margin-top: 0.5rem;
 }
 
-.stats-row {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  margin-bottom: 2rem;
+/* Locate */
+.locate-section {
+  text-align: center;
+  margin: 1.5rem 0;
 }
 
-.stat-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 1rem;
-  border: 2px solid #333;
-  background: #111;
-  min-width: 120px;
-}
-
-.stat-num {
-  font-size: 1.5rem;
-  color: #ffaa00;
-}
-
-.stat-label {
+.locate-btn {
+  background: #ffaa00;
+  color: #0a0a0f;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  font-family: 'Press Start 2P', monospace;
   font-size: 0.6rem;
-  color: #aaa;
-  margin-top: 0.25rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.locate-btn:hover {
+  background: #ffc040;
+}
+
+.locate-btn:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.barry-says {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  color: #ffaa00;
+  font-size: 0.55rem;
+}
+
+.barry-mini {
+  image-rendering: pixelated;
+  width: 24px;
+  height: 24px;
+}
+
+/* Results */
+.results {
+  margin-top: 1.5rem;
 }
 
 h2 {
-  font-size: 0.85rem;
-  margin: 1.5rem 0 0.75rem;
+  font-size: 0.8rem;
+  margin-bottom: 0.75rem;
   border-bottom: 1px solid #333;
   padding-bottom: 0.5rem;
 }
 
-.city-grid, .bar-grid {
+.bar-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 0.75rem;
 }
 
-.city-card, .bar-card {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  padding: 0.75rem;
-  border: 1px solid #333;
+/* Visualizations */
+.viz-section {
+  margin-top: 2rem;
+}
+
+.viz-hint {
+  color: #555;
+  font-size: 0.45rem;
+  margin-bottom: 0.5rem;
+}
+
+.viz-container {
   background: #0d0d14;
-  color: #e5e5f0;
-  text-decoration: none;
-  font-size: 0.7rem;
-  transition: border-color 0.15s;
-}
-
-.city-card:hover, .bar-card:hover {
-  border-color: #ffaa00;
-}
-
-.bar-meta {
-  color: #888;
-  font-size: 0.6rem;
-}
-
-.vibe-tag {
-  display: inline-block;
-  background: #222;
-  color: #ffaa00;
-  padding: 0.15rem 0.4rem;
-  font-size: 0.55rem;
-  border-radius: 2px;
-  width: fit-content;
-}
-
-.team-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.team-chip {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.3rem 0.6rem;
   border: 1px solid #333;
-  font-size: 0.6rem;
-  background: #111;
+  min-height: 400px;
+  overflow: hidden;
 }
 
-.color-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-.loading {
-  text-align: center;
-  color: #888;
-  padding: 3rem;
+.chord-container {
+  display: flex;
+  justify-content: center;
+  min-height: 500px;
 }
 </style>

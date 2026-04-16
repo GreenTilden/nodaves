@@ -1,3 +1,5 @@
+import math
+
 import aiosqlite
 import uuid
 from datetime import datetime, timezone
@@ -76,6 +78,11 @@ async def get_db() -> aiosqlite.Connection:
     db.row_factory = aiosqlite.Row
     await db.execute("PRAGMA journal_mode=WAL")
     await db.execute("PRAGMA foreign_keys=ON")
+    # Register math functions for haversine distance calculations
+    await db.create_function("RADIANS", 1, math.radians)
+    await db.create_function("COS", 1, math.cos)
+    await db.create_function("SIN", 1, math.sin)
+    await db.create_function("ACOS", 1, lambda x: math.acos(max(-1, min(1, x))))
     return db
 
 
