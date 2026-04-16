@@ -1,4 +1,4 @@
-# Home Bar Advantage — Memory
+# No Daves — Memory
 
 ## Session Status
 - **Status**: GREEN — initial scaffold complete
@@ -8,11 +8,11 @@
 - **Last Updated**: 2026-04-15
 
 ## Project Identity
-- **Name**: Home Bar Advantage (brand flexible)
+- **Name**: No Daves (nodaves.com)
 - **Repo**: ~/projects/home-bar-advantage
 - **Stack**: FastAPI + Vue 3/TypeScript/Vite + SQLite + darn3 + Ollama
 - **Ports**: frontend 5015, backend 8907
-- **Deploy Target**: TBD (hba.darrenarney.com, CT 100)
+- **Deploy Target**: nodaves.com (CT 100, /var/www/nodaves/)
 - **Casey-Jr ID**: bfe16f0a
 - **Dewey vehicle**: consolidation-phase project assembling existing DArnTech capabilities
 

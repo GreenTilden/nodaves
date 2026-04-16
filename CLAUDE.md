@@ -1,9 +1,9 @@
-# Home Bar Advantage
+# No Daves
 
 Find your fandom's bar in any city. Curator-driven sports bar database with AI-assisted fandom classification from review text. Barry (DWAVE pixel mascot) hosts and curates.
 
 ## Agent Identity
-- **Name**: TBD (brand flexible)
+- **Name**: No Daves (nodaves.com)
 - **Division**: DTAPE / DWAVE — 100% validation sprint ownership
 - **Reports To**: Darren Arney
 - **Responsibilities**: Sports bar fandom database, city guide generation, content pipeline, darn3 visualizations
@@ -29,10 +29,16 @@ home-bar-advantage/
 └── adapter/           ← Autoresearch harness adapter for overnight batch classification
 ```
 
+## Brand
+- **Barry** = your scout. Pixel mascot from DWAVE. Finds your fandom's bars.
+- **Dave** = the anti-signal. Never shown, only referenced. The loud guy in a Barstool shirt ruining the vibe. High Dave Score = touristy/generic. Low Dave Score = real fandom territory.
+- **Tagline**: "Dave's not here. Your team is."
+- **Domain**: nodaves.com (A record → 47.227.64.28 → CT 100 nginx)
+
 ## Ports
 - **Frontend dev**: localhost:5015
 - **Backend dev**: localhost:8907
-- **Prod**: TBD (hba.darrenarney.com on CT 100)
+- **Prod**: nodaves.com (CT 100, /var/www/nodaves/)
 
 ## Development
 

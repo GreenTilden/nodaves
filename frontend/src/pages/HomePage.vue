@@ -13,8 +13,8 @@ onMounted(async () => {
   <div class="home-page">
     <header class="hero">
       <img src="@/assets/sprites/barry-64.png" alt="Barry" class="barry-sprite" />
-      <h1>Home Bar Advantage</h1>
-      <p class="tagline">Find your fandom's bar in any city</p>
+      <h1>No Daves</h1>
+      <p class="tagline">Dave's not here. Your team is.</p>
     </header>
 
     <section v-if="loading" class="loading">Loading...</section>
