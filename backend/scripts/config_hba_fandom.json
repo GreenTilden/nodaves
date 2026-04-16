@@ -1,0 +1,11 @@
+{
+  "project_name": "home-bar-advantage",
+  "adapter_module": "scripts.adapter_fandom",
+  "adapter_class": "FandomClassifierAdapter",
+  "max_experiments": 50,
+  "time_budget_seconds": 3600,
+  "experiment_timeout_seconds": 60,
+  "results_dir": "results/fandom-tuning",
+  "git_commit_experiments": false,
+  "search_strategy": "random"
+}
